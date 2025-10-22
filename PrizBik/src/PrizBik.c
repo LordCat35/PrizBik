@@ -1,5 +1,5 @@
 // ========================================================================
-// RUBIK.c - Cubo de Rubik para Casio Prizm (fx-CG50)
+// PrizBik - Cubo de Rubik para Casio Prizm (fx-CG50)
 // Versión 1.0
 // ========================================================================
 
@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <PrizBik/controls.h> // <- Ruta del usuario
+#include <PrizBik/controls.h> // c array con los controles del programa
 
 // --- Estados del Programa ---
 enum GameState {
@@ -69,7 +69,7 @@ void draw_sticker(int x, int y, int color) {
     }
 }
 
-void display_scramble_sequence() {
+void display_scramble_sequence() { //mostrar el scramble actual
     int start_x = 140;
     int y = 5;
     int x = start_x;
@@ -84,7 +84,7 @@ void display_scramble_sequence() {
     }
 }
 
-void display_timer() {
+void display_timer() { //mostrar el tiempo
     char time_buffer[16];
     unsigned int total_ticks = 0;
     if (current_state == STATE_TIMING) {
@@ -109,12 +109,12 @@ void display_timer() {
     PrintMini(&x, &y, (const char*)time_buffer, 0, 0xFFFFFFFF, 0, 0, COLOR_BLACK, COLOR_WHITE, 1, 0);
 }
 
-void draw_controls_screen() {
+void draw_controls_screen() { // mostrar la imagen de los controles
     Bdisp_AllClr_VRAM();
     int i = 0;
     for (int y = 0; y < CONTROLS_IMG_HEIGHT; y++) {
         for (int x = 0; x < CONTROLS_IMG_WIDTH; x++) {
-            int screen_x = x + 6;
+            int screen_x = x + 6; //marco blanco de la graficadora
             int screen_y = y + 0;
             if (screen_x < 384 && screen_y < 216) {
                  Bdisp_SetPoint_VRAM(screen_x, screen_y, controls_img_map[i]);
@@ -157,6 +157,8 @@ void init_cube() {
 
 // --- Lógica de Movimientos ---
 void rotate_face_clockwise(int face) { int temp = cube[face][0][0]; cube[face][0][0] = cube[face][2][0]; cube[face][2][0] = cube[face][2][2]; cube[face][2][2] = cube[face][0][2]; cube[face][0][2] = temp; temp = cube[face][0][1]; cube[face][0][1] = cube[face][1][0]; cube[face][1][0] = cube[face][2][1]; cube[face][2][1] = cube[face][1][2]; cube[face][1][2] = temp; }
+void rotate_face_counter_clockwise(int face) { rotate_face_clockwise(face); rotate_face_clockwise(face); rotate_face_clockwise(face); }
+
 void move_U() { rotate_face_clockwise(UP); int temp[3]; for(int i=0; i<3; i++) temp[i] = cube[FRONT][0][i]; for(int i=0; i<3; i++) { cube[FRONT][0][i] = cube[RIGHT][0][i]; cube[RIGHT][0][i] = cube[BACK][0][i]; cube[BACK][0][i] = cube[LEFT][0][i]; cube[LEFT][0][i] = temp[i]; } }
 void move_D() { rotate_face_clockwise(DOWN); int temp[3]; for(int i=0; i<3; i++) temp[i] = cube[FRONT][2][i]; for(int i=0; i<3; i++) { cube[FRONT][2][i] = cube[LEFT][2][i]; cube[LEFT][2][i] = cube[BACK][2][i]; cube[BACK][2][i] = cube[RIGHT][2][i]; cube[RIGHT][2][i] = temp[i]; } }
 void move_F() { rotate_face_clockwise(FRONT); int temp[3]; for(int i=0; i<3; i++) temp[i] = cube[UP][2][i]; for(int i=0; i<3; i++) { cube[UP][2][i] = cube[LEFT][2-i][2]; cube[LEFT][2-i][2] = cube[DOWN][0][2-i]; cube[DOWN][0][2-i] = cube[RIGHT][i][0]; cube[RIGHT][i][0] = temp[i]; } }
@@ -180,7 +182,6 @@ void move_E_prime() { move_E(); move_E(); move_E(); }
 void move_r() { move_R(); move_M_prime(); }
 void move_r_prime() { move_R_prime(); move_M(); }
 
-void rotate_face_counter_clockwise(int face) { rotate_face_clockwise(face); rotate_face_clockwise(face); rotate_face_clockwise(face); }
 void move_y() { rotate_face_clockwise(UP); rotate_face_counter_clockwise(DOWN); int temp_face[3][3]; memcpy(temp_face, cube[FRONT], sizeof(temp_face)); memcpy(cube[FRONT], cube[RIGHT], sizeof(cube[FRONT])); memcpy(cube[RIGHT], cube[BACK], sizeof(cube[RIGHT])); memcpy(cube[BACK], cube[LEFT], sizeof(cube[BACK])); memcpy(cube[LEFT], temp_face, sizeof(cube[LEFT])); }
 void move_y_prime() { move_y(); move_y(); move_y(); }
 
@@ -190,7 +191,7 @@ void move_x_prime() { move_x(); move_x(); move_x(); }
 void macro_1() { move_R(); move_U(); move_R_prime(); move_F_prime(); move_R(); move_U(); move_R_prime(); move_U_prime(); move_R_prime(); move_F(); move_R(); move_R(); move_U_prime(); move_R_prime(); move_U_prime(); }
 void macro_2() { move_F(); move_R(); move_U_prime(); move_R_prime(); move_U_prime(); move_R(); move_U(); move_R_prime(); move_F_prime(); move_R(); move_U(); move_R_prime(); move_U_prime(); move_R_prime(); move_F(); move_R(); move_F_prime(); }
 
-// --- Función de Mezcla ---
+// --- Función de Scramble ---
 void scramble_cube() {
     memset(scramble_sequence, 0, sizeof(scramble_sequence));
     const char* face_names[] = {"U", "D", "L", "R", "F", "B"};
@@ -275,7 +276,7 @@ int main(void) {
                     } else {
                         current_state = STATE_IDLE;
                     }
-                    break; // Importante salir del switch aquí para no procesar la tecla como movimiento
+                    break; // Salir del switch para no procesar la tecla como movimiento
                  }
                  
                 // Lógica de movimientos solo si estamos en SCRAMBLED o TIMING
@@ -302,9 +303,9 @@ int main(void) {
                         case KEY_CHAR_2: move_F_prime(); move_made=1; break;
                         case KEY_CHAR_8: move_B_prime(); move_made=1; break;
 
-                        // Movimientos de Capa Media (TECLAS REASIGNADAS)
-                        case KEY_CTRL_FD: move_M_prime(); move_made=1; break;   // M' en [S<=>D]
-                        case KEY_CHAR_LOG: move_M(); move_made=1; break;        // M en [log]
+                        // Movimientos de Capa Media
+                        case KEY_CTRL_FD: move_M_prime(); move_made=1; break;
+                        case KEY_CHAR_LOG: move_M(); move_made=1; break;
                         case KEY_CHAR_RPAR: move_E(); move_made=1; break;
                         case KEY_CHAR_LPAR: move_E_prime(); move_made=1; break;
 
@@ -312,13 +313,13 @@ int main(void) {
                         case KEY_CHAR_7: move_x(); move_made=1; break;
                         case KEY_CTRL_AC: move_y(); move_made=1; break;
                         case KEY_CTRL_DEL: move_y_prime(); move_made=1; break;
-                        case KEY_CHAR_FRAC: move_x_prime(); move_made=1; break; // x' en [a b/c]
+                        case KEY_CHAR_FRAC: move_x_prime(); move_made=1; break;
                         
                         // Wide Moves
                         case KEY_CHAR_DIV: move_r(); move_made=1; break;
                         case KEY_CHAR_MINUS: move_r_prime(); move_made=1; break;
 
-                        // Macros
+                        // PLL's
                         case KEY_CHAR_STORE: macro_1(); move_made=1; break;
                         case KEY_CHAR_COMMA: macro_2(); move_made=1; break;
                     }
